@@ -1410,6 +1410,11 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_SAE))
 		sel &= ~(WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_FT_SAE);
 #endif /* CONFIG_SAE */
+#ifdef CONFIG_IEEE80211R
+	if (!(wpa_s->drv_flags & (WPA_DRIVER_FLAGS_SME |
+				  WPA_DRIVER_FLAGS_UPDATE_FT_IES)))
+		sel &= ~WPA_KEY_MGMT_FT;
+#endif /* CONFIG_IEEE80211R */
 	if (0) {
 #ifdef CONFIG_IEEE80211R
 #ifdef CONFIG_SHA384
@@ -4126,8 +4131,13 @@ static int wpa_supplicant_set_driver(struct wpa_supplicant *wpa_s,
 	}
 
 	if (name == NULL) {
-		/* default to first driver in the list */
-		return select_driver(wpa_s, 0);
+		/* Default to first successful driver in the list */
+		for (i = 0; wpa_drivers[i]; i++) {
+			if (select_driver(wpa_s, i) == 0)
+				return 0;
+		}
+		/* Drivers have each reported failure, so no wpa_msg() here. */
+		return -1;
 	}
 
 	do {
@@ -4369,6 +4379,65 @@ static void wpa_supplicant_rx_eapol_bridge(void *ctx, const u8 *src_addr,
 		" (bridge)", MAC2STR(src_addr), MAC2STR(eth->h_dest));
 	wpa_supplicant_rx_eapol(wpa_s, src_addr, buf + sizeof(*eth),
 				len - sizeof(*eth));
+}
+
+
+int wpa_supplicant_update_bridge_ifname(struct wpa_supplicant *wpa_s,
+					const char *bridge_ifname)
+{
+	if (wpa_s->wpa_state > WPA_SCANNING)
+		return -EBUSY;
+
+	if (bridge_ifname &&
+	    os_strlen(bridge_ifname) >= sizeof(wpa_s->bridge_ifname))
+		return -EINVAL;
+
+	if (!bridge_ifname)
+		bridge_ifname = "";
+
+	if (os_strcmp(wpa_s->bridge_ifname, bridge_ifname) == 0)
+		return 0;
+
+	if (wpa_s->l2_br) {
+		l2_packet_deinit(wpa_s->l2_br);
+		wpa_s->l2_br = NULL;
+	}
+
+	os_strlcpy(wpa_s->bridge_ifname, bridge_ifname,
+		   sizeof(wpa_s->bridge_ifname));
+
+	if (wpa_s->bridge_ifname[0]) {
+		wpa_dbg(wpa_s, MSG_DEBUG,
+			"Receiving packets from bridge interface '%s'",
+			wpa_s->bridge_ifname);
+		wpa_s->l2_br = l2_packet_init_bridge(
+			wpa_s->bridge_ifname, wpa_s->ifname, wpa_s->own_addr,
+			ETH_P_EAPOL, wpa_supplicant_rx_eapol_bridge, wpa_s, 1);
+		if (!wpa_s->l2_br) {
+			wpa_msg(wpa_s, MSG_ERROR,
+				"Failed to open l2_packet connection for the bridge interface '%s'",
+				wpa_s->bridge_ifname);
+			goto fail;
+		}
+	}
+
+#ifdef CONFIG_TDLS
+	if (!wpa_s->p2p_mgmt && wpa_tdls_init(wpa_s->wpa))
+		goto fail;
+#endif /* CONFIG_TDLS */
+
+	return 0;
+fail:
+	wpa_s->bridge_ifname[0] = 0;
+	if (wpa_s->l2_br) {
+		l2_packet_deinit(wpa_s->l2_br);
+		wpa_s->l2_br = NULL;
+	}
+#ifdef CONFIG_TDLS
+	if (!wpa_s->p2p_mgmt)
+		wpa_tdls_init(wpa_s->wpa);
+#endif /* CONFIG_TDLS */
+	return -EIO;
 }
 
 
@@ -6448,7 +6517,7 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 	wpa_debug_timestamp = global->params.wpa_debug_timestamp =
 		params->wpa_debug_timestamp;
 
-	wpa_printf(MSG_DEBUG, "wpa_supplicant v" VERSION_STR);
+	wpa_printf(MSG_DEBUG, "wpa_supplicant v%s", VERSION_STR);
 
 	if (eloop_init()) {
 		wpa_printf(MSG_ERROR, "Failed to initialize event loop");

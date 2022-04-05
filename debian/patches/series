@@ -35,3 +35,5 @@ upstream-fixes/0016-hostapd-Fix-error-message-for-radius_accept_attr-config-opti
 2021-1/0001-P2P-Fix-a-corner-case-in-peer-addition-based-on-PD-R.patch
 
 wpa_supplicant-Try-all-drivers-by-default.patch
+
+rtlxdrv.patch

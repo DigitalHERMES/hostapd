@@ -178,7 +178,7 @@ CFLAGS += -DCONFIG_ELOOP_KQUEUE
 endif
 
 ifdef CONFIG_EAPOL_TEST
-CFLAGS += -Werror -DEAPOL_TEST
+CFLAGS += -DEAPOL_TEST
 endif
 
 ifdef CONFIG_CODE_COVERAGE
@@ -1017,7 +1017,7 @@ else
 ifdef CONFIG_OSX
 LIBS += -framework PCSC
 else
-LIBS += -lpcsclite -lpthread
+LIBS += $(shell $(PKG_CONFIG) --libs libpcsclite)
 endif
 endif
 endif

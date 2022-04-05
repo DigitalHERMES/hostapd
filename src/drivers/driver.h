@@ -1659,6 +1659,8 @@ struct wpa_driver_capa {
 #define WPA_DRIVER_FLAGS_FTM_RESPONDER		0x0100000000000000ULL
 /** Driver support 4-way handshake offload for WPA-Personal */
 #define WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_PSK	0x0200000000000000ULL
+/** Driver supports UPDATE_FT_IES command */
+#define WPA_DRIVER_FLAGS_UPDATE_FT_IES		0x1000000000000000ULL
 	u64 flags;
 
 #define FULL_AP_CLIENT_STATE_SUPP(drv_flags) \
@@ -5774,5 +5776,8 @@ extern const struct wpa_driver_ops wpa_driver_atheros_ops;
 #ifdef CONFIG_DRIVER_NONE
 extern const struct wpa_driver_ops wpa_driver_none_ops; /* driver_none.c */
 #endif /* CONFIG_DRIVER_NONE */
+#ifdef CONFIG_DRIVER_RTW
+extern const struct wpa_driver_ops wpa_driver_rtw_ops; /* driver_rtw.c */
+#endif /* CONFIG_DRIVER_RTW */
 
 #endif /* DRIVER_H */

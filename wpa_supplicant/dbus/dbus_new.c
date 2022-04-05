@@ -2855,30 +2855,6 @@ static const struct wpa_dbus_property_desc wpas_dbus_bss_properties[] = {
 	  NULL,
 	  NULL
 	},
-	{
-	  "RoamTime", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
-	  wpas_dbus_getter_roam_time,
-	  NULL,
-	  NULL
-	},
-	{
-	  "RoamComplete", WPAS_DBUS_NEW_IFACE_INTERFACE, "b",
-	  wpas_dbus_getter_roam_complete,
-	  NULL,
-	  NULL
-	},
-	{
-	  "SessionLength", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
-	  wpas_dbus_getter_session_length,
-	  NULL,
-	  NULL
-	},
-	{
-	  "BSSTMStatus", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
-	  wpas_dbus_getter_bss_tm_status,
-	  NULL,
-	  NULL
-	},
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
@@ -3633,7 +3609,7 @@ static const struct wpa_dbus_property_desc wpas_dbus_interface_properties[] = {
 	},
 	{ "BridgeIfname", WPAS_DBUS_NEW_IFACE_INTERFACE, "s",
 	  wpas_dbus_getter_bridge_ifname,
-	  NULL,
+	  wpas_dbus_setter_bridge_ifname,
 	  NULL
 	},
 	{ "ConfigFile", WPAS_DBUS_NEW_IFACE_INTERFACE, "s",
@@ -3783,6 +3759,30 @@ static const struct wpa_dbus_property_desc wpas_dbus_interface_properties[] = {
 	},
 	{ "AssocStatusCode", WPAS_DBUS_NEW_IFACE_INTERFACE, "i",
 	  wpas_dbus_getter_assoc_status_code,
+	  NULL,
+	  NULL
+	},
+	{
+	  "RoamTime", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
+	  wpas_dbus_getter_roam_time,
+	  NULL,
+	  NULL
+	},
+	{
+	  "RoamComplete", WPAS_DBUS_NEW_IFACE_INTERFACE, "b",
+	  wpas_dbus_getter_roam_complete,
+	  NULL,
+	  NULL
+	},
+	{
+	  "SessionLength", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
+	  wpas_dbus_getter_session_length,
+	  NULL,
+	  NULL
+	},
+	{
+	  "BSSTMStatus", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
+	  wpas_dbus_getter_bss_tm_status,
 	  NULL,
 	  NULL
 	},
@@ -4791,8 +4791,8 @@ void wpas_dbus_unregister_p2p_group(struct wpa_supplicant *wpa_s,
 
 	if (!wpa_s->dbus_groupobj_path) {
 		wpa_printf(MSG_DEBUG,
-			   "%s: Group object '%s' already unregistered",
-			   __func__, wpa_s->dbus_groupobj_path);
+			   "%s: Group object already unregistered",
+			   __func__);
 		return;
 	}
 

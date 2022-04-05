@@ -620,9 +620,10 @@ static int wps_build_probe_config_methods(struct wps_registrar *reg,
 	 * These are the methods that the AP supports as an Enrollee for adding
 	 * external Registrars.
 	 */
-	methods = reg->wps->config_methods & ~WPS_CONFIG_PUSHBUTTON;
-	methods &= ~(WPS_CONFIG_VIRT_PUSHBUTTON |
-		     WPS_CONFIG_PHY_PUSHBUTTON);
+	methods = reg->wps->config_methods;
+	//methods = reg->wps->config_methods & ~WPS_CONFIG_PUSHBUTTON;
+	//methods &= ~(WPS_CONFIG_VIRT_PUSHBUTTON |
+	//	     WPS_CONFIG_PHY_PUSHBUTTON);
 	wpa_printf(MSG_DEBUG, "WPS:  * Config Methods (%x)", methods);
 	wpabuf_put_be16(msg, ATTR_CONFIG_METHODS);
 	wpabuf_put_be16(msg, 2);
@@ -3664,6 +3665,35 @@ int wps_registrar_config_ap(struct wps_registrar *reg,
 		return reg->wps->cred_cb(reg->wps->cb_ctx, cred);
 
 	return -1;
+}
+
+
+int wps_registrar_update_multi_ap(struct wps_registrar *reg,
+				  const u8 *multi_ap_backhaul_ssid,
+				  size_t multi_ap_backhaul_ssid_len,
+				  const u8 *multi_ap_backhaul_network_key,
+				  size_t multi_ap_backhaul_network_key_len)
+{
+	if (multi_ap_backhaul_ssid) {
+		os_memcpy(reg->multi_ap_backhaul_ssid,
+			  multi_ap_backhaul_ssid, multi_ap_backhaul_ssid_len);
+		reg->multi_ap_backhaul_ssid_len = multi_ap_backhaul_ssid_len;
+	}
+
+	os_free(reg->multi_ap_backhaul_network_key);
+	reg->multi_ap_backhaul_network_key = NULL;
+	reg->multi_ap_backhaul_network_key_len = 0;
+	if (multi_ap_backhaul_network_key) {
+		reg->multi_ap_backhaul_network_key =
+			os_memdup(multi_ap_backhaul_network_key,
+				  multi_ap_backhaul_network_key_len);
+		if (!reg->multi_ap_backhaul_network_key)
+			return -1;
+		reg->multi_ap_backhaul_network_key_len =
+			multi_ap_backhaul_network_key_len;
+	}
+
+	return 0;
 }
 
 
